@@ -1,0 +1,248 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+// Course class - 과목 클래스
+class Course {
+public:
+    string courseName;
+    int credits;
+    bool isRequired;
+
+    Course(string courseName, int credits, bool isRequired)
+        : courseName(courseName), credits(credits), isRequired(isRequired) {}
+};
+
+// User class - 사용자 클래스 (부모 클래스)
+class User {
+protected:
+    string name;
+    string id;
+    string password;
+    string role; // "Professor" or "Student"
+
+public:
+    User(string name, string id, string password, string role)
+        : name(name), id(id), password(password), role(role) {}
+
+    virtual void showMenu() = 0;  // 자식 클래스에서 메뉴 구현
+    string getId() { return id; }
+    string getRole() { return role; }
+    bool verifyPassword(string inputPassword) { return password == inputPassword; }
+};
+
+// Professor class - 교수 클래스 (User 상속)
+class Professor : public User {
+public:
+    Professor(string name, string id, string password)
+        : User(name, id, password, "Professor") {}
+
+    void showMenu() override {
+        cout << "\n[교수 메뉴]\n";
+        cout << "1. 성적 입력\n";
+        cout << "2. 성적 수정\n";
+        cout << "3. 로그아웃\n";
+    }
+
+    void enterGrades() {
+        // 성적 입력 기능 (추후 구현)
+        cout << "성적을 입력합니다.\n";
+    }
+};
+
+// Student class - 학생 클래스 (User 상속)
+class Student : public User {
+private:
+    vector<Course> completedCourses;
+
+public:
+    Student(string name, string id, string password)
+        : User(name, id, password, "Student") {}
+
+    void addCompletedCourse(Course course) {
+        completedCourses.push_back(course);
+    }
+
+    bool checkGraduationRequirements() {
+        int totalCredits = 0;
+        double totalGradePoints = 0.0;
+        bool requiredCoursesCompleted = true;
+
+        // 필수 과목 리스트 (기계공학과 졸업 요건)
+        vector<string> requiredCourses = {"Mechanical Design", "Thermodynamics"};
+
+        for (const Course& course : completedCourses) {
+            totalCredits += course.credits;
+            // 성적은 임의로 설정 가능 (여기서는 기본 4.0 만점 기준)
+            totalGradePoints += 4.0 * course.credits;  // 임시로 4.0 만점 기준 성적
+
+            if (course.isRequired) {
+                auto it = find(requiredCourses.begin(), requiredCourses.end(), course.courseName);
+                if (it != requiredCourses.end()) {
+                    requiredCourses.erase(it);
+                }
+            }
+        }
+
+        double averageGPA = totalGradePoints / totalCredits;
+
+        if (!requiredCourses.empty()) {
+            requiredCoursesCompleted = false;
+        }
+
+        if (totalCredits >= 130 && averageGPA >= 2.0 && requiredCoursesCompleted) {
+            cout << "졸업 요건을 충족했습니다.\n";
+            return true;
+        } else {
+            cout << "졸업 요건을 충족하지 못했습니다.\n";
+            return false;
+        }
+    }
+
+    void showMenu() override {
+        cout << "\n[학생 메뉴]\n";
+        cout << "1. 성적 조회\n";
+        cout << "2. 졸업 요건 충족 여부 확인\n";
+        cout << "3. 로그아웃\n";
+    }
+
+    void viewGrades() {
+        // 성적 조회 기능 (추후 구현)
+        cout << "성적을 조회합니다.\n";
+    }
+};
+
+// Admin class - 관리자 클래스
+class Admin {
+public:
+    void createUser(vector<User*>& users, string name, string id, string password, string role) {
+        if (role == "Professor") {
+            users.push_back(new Professor(name, id, password));
+        } else if (role == "Student") {
+            users.push_back(new Student(name, id, password));
+        }
+        cout << "사용자가 생성되었습니다.\n";
+    }
+
+    void deleteUser(vector<User*>& users, string id) {
+        for (auto it = users.begin(); it != users.end(); ++it) {
+            if ((*it)->getId() == id) {
+                delete *it;
+                users.erase(it);
+                cout << "사용자가 삭제되었습니다.\n";
+                return;
+            }
+        }
+        cout << "사용자를 찾을 수 없습니다.\n";
+    }
+
+    void modifyUser(vector<User*>& users, string id, string newPassword) {
+        for (User* user : users) {
+            if (user->getId() == id) {
+                // 사용자 비밀번호 변경 (추후 확장 가능)
+                cout << "사용자의 비밀번호가 변경되었습니다.\n";
+                return;
+            }
+        }
+        cout << "사용자를 찾을 수 없습니다.\n";
+    }
+};
+
+// 파일 저장 및 불러오기 기능
+void saveToFile(const vector<User*>& users) {
+    ofstream file("user_data.txt");
+    if (file.is_open()) {
+        for (const User* user : users) {
+            file << user->getId() << " " << user->getRole() << endl;
+        }
+        file.close();
+        cout << "데이터가 파일에 저장되었습니다.\n";
+    } else {
+        cout << "파일을 열 수 없습니다.\n";
+    }
+}
+
+void loadFromFile(vector<User*>& users) {
+    ifstream file("user_data.txt");
+    string id, role;
+    while (file >> id >> role) {
+        // 파일에서 사용자 정보 불러오기 (간단히 구현)
+        if (role == "Professor") {
+            users.push_back(new Professor("교수이름", id, "password"));
+        } else if (role == "Student") {
+            users.push_back(new Student("학생이름", id, "password"));
+        }
+    }
+    cout << "데이터가 파일에서 로드되었습니다.\n";
+}
+
+// 메인 프로그램
+int main() {
+    vector<User*> users;
+    Admin admin;
+    loadFromFile(users);  // 파일에서 사용자 불러오기
+
+    while (true) {
+        string id, password;
+        cout << "\n로그인 ID: ";
+        cin >> id;
+        cout << "비밀번호: ";
+        cin >> password;
+
+        User* loggedInUser = nullptr;
+
+        for (User* user : users) {
+            if (user->getId() == id && user->verifyPassword(password)) {
+                loggedInUser = user;
+                break;
+            }
+        }
+
+        if (loggedInUser != nullptr) {
+            cout << loggedInUser->getRole() << "로 로그인되었습니다.\n";
+            loggedInUser->showMenu();
+
+            int option;
+            cin >> option;
+
+            if (loggedInUser->getRole() == "Student") {
+                Student* student = dynamic_cast<Student*>(loggedInUser);
+                switch (option) {
+                    case 1:
+                        student->viewGrades();
+                        break;
+                    case 2:
+                        student->checkGraduationRequirements();
+                        break;
+                    default:
+                        break;
+                }
+            } else if (loggedInUser->getRole() == "Professor") {
+                Professor* professor = dynamic_cast<Professor*>(loggedInUser);
+                switch (option) {
+                    case 1:
+                        professor->enterGrades();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } else {
+            cout << "로그인 실패: ID 또는 비밀번호가 틀렸습니다.\n";
+        }
+
+        // 프로그램 종료 및 데이터 저장
+        saveToFile(users);
+        break;
+    }
+
+    // 동적 메모리 해제
+    for (User* user : users) {
+        delete user;
+    }
+
+    return 0;
+}
