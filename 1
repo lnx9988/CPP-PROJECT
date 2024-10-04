@@ -1,0 +1,404 @@
+//start.c
+
+#include "std.h"
+
+int main()
+{
+App app;
+app.app_init();
+app.app_run();
+app.app_exit();
+
+return 0;
+}
+
+//std.h
+ 
+
+
+#pragma once
+
+#include <iostream> 
+using namespace std;
+
+#include <string.h>
+#include <stdlib.h>
+#include <conio.h>
+
+#include "student.h"
+#include "studentcontrol.h"
+#include "WbLib.h"
+#include "App.h"
+
+ 
+
+//Student.cpp
+ 
+
+
+#include "std.h"
+
+Student::Student(int _number, string _name, int _attend, int _report, int _test1, int _test2, int _total)
+: number(_number),name(_name),attend(_attend), report(_report), test1(_test1), test2(_test2), total(_total)
+{
+}
+
+int Student::get_number() const
+{
+return number;
+}
+
+string Student::get_name() const
+{
+return name;
+}
+
+int Student::get_attend() const
+{
+return attend;
+}
+
+int Student::get_report() const
+{
+return report;
+}
+
+int Student::get_test1() const
+{
+return test1;
+}
+
+int Student::get_test2() const
+{
+return test2;
+}
+
+int Student::get_total() const
+{
+return total;
+}
+
+void Student::set_grade(int value1, int value2)
+{
+test1 = value1;
+test2 = value2;
+}
+
+void Student::print() const
+{
+cout << number << "\t" << name << "\t" << attend << "\t" << report 
+<< "\t" << test1 << "\t" << test2 << "\t" << total << "점"<<endl;
+}
+
+void Student::println() const
+{
+cout << "학번 " << number << endl;
+cout << "이름 " << name << endl;
+cout << "출석 " << attend << endl;
+cout << "과제 " << report << endl;
+cout << "중간고사 " << test1 << endl;
+cout << "기말고사 " << test2 << endl;
+cout << "총점 " << total << endl;
+}
+
+ 
+
+//Student.h
+ 
+
+
+#pragma once
+
+class Student
+{
+private:
+int number;
+string name;
+int attend;
+int report;
+int test1;
+int test2;
+int total;
+
+public:
+Student(int _number, string _name, int _attend, int _report, int _test1, int _test2, int _total);
+
+public:
+int get_number() const;
+string get_name() const;
+int get_attend() const;
+int get_report() const;
+int get_test1() const;
+int get_test2() const;
+int get_total() const;
+void set_grade(int value1, int value2);
+
+public:
+void print() const;
+void println() const;
+};
+
+ 
+
+//studentcontrol.cpp
+ 
+
+#include "std.h"
+
+StudentControl::StudentControl() : count(0), max(DATA_MAX)
+{
+
+}
+
+void StudentControl::con_insert()
+{
+printf("\n[저장]\n");
+
+if (count >= max)
+{
+cout << "Overflow" << endl;
+return;
+}
+
+int number = WbLib::input_integer("학번");
+string name = WbLib::input_string("이름");
+int attend = WbLib::input_integer("출결");
+int report = WbLib::input_integer("과제");
+int test1 = WbLib::input_integer ("중간고사");
+int test2 = WbLib::input_integer ("기말고사");
+int total = attend + report + test1 + test2;
+
+Student* pstudent = new Student(number, name, attend, report, test1, test2, total);
+
+students[count] = pstudent;
+count++;
+
+cout << "저장 완료" << endl;
+}
+
+void StudentControl::con_select()
+{
+cout << "[검색]" << endl;
+
+int number = WbLib::input_integer("학번");
+
+int idx = Numbertoidx(number);
+if (idx == -1)
+{
+cout << "존재하지 않는 학번" << endl; }
+else
+{
+Student* student = students[idx];
+student->println();
+}
+}
+
+void StudentControl::con_update()
+{
+cout << "[수정]" << endl;
+
+int number = WbLib::input_integer("학번");
+int test1 = WbLib::input_integer("중간고사");
+int test2 = WbLib::input_integer("기말고사");
+
+int idx = Numbertoidx(number);
+if (idx == -1)
+{
+cout << "존재하지 않는 학번" << endl;
+}
+else
+{
+Student* student = students[idx];
+student->set_grade(test1, test2);
+
+cout << "수정 완료" << endl;
+}
+}
+
+void StudentControl::con_delete()
+{
+cout << "[삭제]" << endl;
+
+int number = WbLib::input_integer("학번");
+
+int idx = Numbertoidx(number);
+if (idx == -1)
+{
+cout << "존재하지 않는 학번" << endl;
+}
+else
+{
+for (int i = idx; i < count; i++)
+students[i] = students[i + 1];
+
+count--;
+
+cout << "삭제 완료" << endl;
+}
+}
+
+void StudentControl::con_printall()
+{
+for (int i = 0; i < count; i++)
+{
+Student* student = students[i];
+student->print();
+}
+}
+
+
+int StudentControl::Numbertoidx(int number)
+{
+for (int i = 0; i < count; i++)
+{
+Student* student = students[i];
+
+if (student->get_number() == number)
+{
+return i;
+}
+}
+return -1;
+}
+
+ 
+
+//studentcontrol.h
+ 
+
+
+#pragma once
+#define DATA_MAX 10
+class StudentControl
+{
+private:
+Student* students[DATA_MAX];
+int count;
+int max;
+
+public:
+StudentControl();
+
+public:
+void con_insert();
+void con_select();
+void con_update();
+void con_delete();
+void con_printall();
+
+private:
+int Numbertoidx(int number);
+};
+
+ 
+
+//App.cpp
+ 
+
+
+#include "std.h"
+
+void App::app_init()
+{
+system("cls");
+printf("********************************\n");
+printf(" C++언어 OOP프로그래밍\n");
+printf(" 학생 성적 관리 프로그램\n");
+printf(" 2023.11.18\n");
+printf("********************************\n");
+system("pause");
+}
+
+void App::app_run()
+{
+
+while (true)
+{
+system("cls");
+con.con_printall();
+printf("********************************\n");
+printf(" [1] 저장(insert)\n");
+printf(" [2] 검색(select)\n");
+printf(" [3] 수정(update)\n");
+printf(" [4] 삭제(delete)\n");
+printf(" [5] 종료(exit)\n");
+printf("********************************\n");
+char idx = _getch();
+switch (idx)
+{
+case '1':  con.con_insert(); break;
+case '2':  con.con_select(); break;
+case '3':  con.con_update(); break;
+case '4':  con.con_delete(); break;
+case '5':  con.con_printall(); break;
+case '6':   return;
+}
+system("pause");
+}
+}
+
+void App::app_exit()
+{
+system("cls");
+printf("********************************\n");
+printf(" 프로그램 종료\n");
+printf("********************************\n");
+system("pause");
+}
+
+ 
+
+//App.h
+ 
+
+
+#pragma once
+
+class App
+{
+StudentControl con;
+public:
+void app_init();
+void app_run();
+void app_exit();
+};
+
+ 
+
+//WbLib.cpp
+ 
+
+
+#include "std.h"
+
+int WbLib::input_integer(string msg)
+{
+int value;
+cout << msg << ":";
+cin >> value;
+return value;
+}
+
+char WbLib::input_char(string msg)
+{
+char value;
+cout << msg << ":";
+cin >> value;
+return value;
+}
+
+string WbLib::input_string(string msg)
+{
+string value;
+cout << msg << ":";
+cin >> value;
+return value;
+}
+
+float WbLib::input_float(string msg)
+{
+float value;
+cout << msg << ":";
+cin >> value;
+return value;
+}
